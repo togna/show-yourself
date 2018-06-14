@@ -71,7 +71,7 @@
         // grab artist from input field
         var artist = input.value;
         var tmurl =
-          "https://app.ticketmaster.com/discovery/v2/attractions.json?apikey=Tg091nAJ9G3ozh4FQgk8vW1U5byX5zpE&keyword="
+          "https://app.ticketmaster.com/discovery/v2/attractions.json?apikey=[API_KEY]&keyword="
           + artist;
         getJSON(tmurl,
           function (err, artistJSON) {
@@ -79,7 +79,7 @@
             // use artist Id and user latlong to lookup nearest upcoming concert
             var artistId = artistJSON._embedded.attractions[0].id;
             var lookupurl =
-              "https://app.ticketmaster.com/discovery/v2/events.json?size=1&apikey=Tg091nAJ9G3ozh4FQgk8vW1U5byX5zpE&attractionId="
+              "https://app.ticketmaster.com/discovery/v2/events.json?size=1&apikey=[API_KEY]&attractionId="
               + artistId + "&latlong=" + userLL.lat + "," + userLL.lng;
             getJSON(lookupurl,
               function (err, eventJSON) {
@@ -129,7 +129,7 @@
         }
     </script>
     <script async defer src=
-      "https://maps.googleapis.com/maps/api/js?key=AIzaSyA4LVxumCf9mommmf-4hDaK4tpu4rwnr3M&callback=initMap">
+      "https://maps.googleapis.com/maps/api/js?key=[API_KEY]&callback=initMap">
     </script>
 
   </body>
