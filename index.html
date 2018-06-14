@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Show Yourself</title>
+    <style>
+      #map {
+        height: 50%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ticketmaster Lookup</h1>
+    <p>Enter an artist in the text field and click submit to see the nearest upcoming show.</p>
+    <div id="map"></div>
+    <input id="input" type="text"/>
+    <button id="button" type="button" onclick="submit();">Submit</button>
+    <p id="info"></p>
+
+    <script>
+      // returns a JSON object from a URL
+      var getJSON = function(url, callback) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.responseType = 'json';
+          xhr.onload = function() {
+            var status = xhr.status;
+            if (status === 200) {
+              return(callback(null, xhr.response));
+            } else {
+              callback(status, xhr.response);
+            }
+          };
+          xhr.send();
+      };
+
+      // get location from HTML5 API
+      function getLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(grabLatLong);
+        } else {
+          info.innerHTML = "Geolocation is not supported by this browser.";
+        }
+      }
+
+      // store latlng in global variable
+      var userLL = {lat: 0, lng: 0};
+      function grabLatLong(pos) {
+        userLL.lat = pos.coords.latitude;
+        userLL.lng = pos.coords.longitude;
+      }
+
+      // initialize the Google map
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 4,
+          center: {lat: 37.773972, lng: -122.431297}
+        });
+      }
+
+      getLocation();
+
+      // upon pressing submit
+      function submit() {
+        // grab artist from input field
+        var artist = input.value;
+        var tmurl =
+          "https://app.ticketmaster.com/discovery/v2/attractions.json?apikey=Tg091nAJ9G3ozh4FQgk8vW1U5byX5zpE&keyword="
+          + artist;
+        getJSON(tmurl,
+          function (err, artistJSON) {
+
+            // use artist Id and user latlong to lookup nearest upcoming concert
+            var artistId = artistJSON._embedded.attractions[0].id;
+            var lookupurl =
+              "https://app.ticketmaster.com/discovery/v2/events.json?size=1&apikey=Tg091nAJ9G3ozh4FQgk8vW1U5byX5zpE&attractionId="
+              + artistId + "&latlong=" + userLL.lat + "," + userLL.lng;
+            getJSON(lookupurl,
+              function (err, eventJSON) {
+                // store event info
+                var eventName = eventJSON._embedded.events[0].name;
+                var eventUrl = eventJSON._embedded.events[0].url;
+                var eventDate = eventJSON._embedded.events[0].dates.start.localDate;
+                var eventTime = eventJSON._embedded.events[0].dates.start.localTime;
+                var venueName = eventJSON._embedded.events[0]._embedded.venues[0].name;
+                var venueAddress = eventJSON._embedded.events[0]._embedded.venues[0].address.line1;
+                var venueCity = eventJSON._embedded.events[0]._embedded.venues[0].city.name;
+                var venueState = eventJSON._embedded.events[0]._embedded.venues[0].state.stateCode;
+                var venueZip = eventJSON._embedded.events[0]._embedded.venues[0].postalCode;
+                var venueFullAddress = venueName + "<br>"
+                  + venueAddress + "<br>"
+                  + venueCity + ", " + venueState + " " + venueZip;
+                var venueLat = parseFloat(eventJSON._embedded.events[0]._embedded.venues[0].location.latitude);
+                var venueLng = parseFloat(eventJSON._embedded.events[0]._embedded.venues[0].location.longitude);
+                var venueLL = {lat: venueLat, lng: venueLng};
+                console.log(venueLL);
+
+                // display map
+                var mapOptions = {
+                  zoom: 14,
+                  center: venueLL
+                };
+                var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+                var marker = new google.maps.Marker({
+                  position: venueLL,
+                  map: map,
+                  zoom: 14
+                });
+                map.panTo(venueLL);
+                var infowindow = new google.maps.InfoWindow({
+                  content: venueFullAddress
+                });
+                infowindow.open(map, marker);
+
+                // display event info and ticket purchase link
+                document.getElementById("info").innerHTML =
+                  eventName + "<br>"
+                  + eventDate + " " + eventTime + "<br>"
+                  + venueFullAddress
+                  + "<br><a href =\"" + eventUrl + "\">" + "Click here to buy tickets!</a>";
+                });
+            });
+        }
+    </script>
+    <script async defer src=
+      "https://maps.googleapis.com/maps/api/js?key=AIzaSyA4LVxumCf9mommmf-4hDaK4tpu4rwnr3M&callback=initMap">
+    </script>
+
+  </body>
+</html>
